@@ -2,16 +2,16 @@
 
 import numpy as np
 
-sim_time = 200                             # Total simulation time steps
-Ts = 0.1                                   # Sampling time [s]
+sim_time = 50                             # Total simulation time steps
+Ts = 0.4                                   # Sampling time [s]
 T_horizon = 20                             # Prediction horizon time steps
 
 gamma = 0.1                                # CBF parameter in [0,1]
 safety_dist = 0.03                         # Safety distance
-x0 = np.array([0, 0, 0])                   # Initial state
+x0 = np.array([-3., 0.5, 0, 0])                   # Initial state
 
 # Actuator limits
-v_limit = 0.26                             # Linear velocity limit
+v_limit = 1.                           # Linear velocity limit
 omega_limit = 1.8                          # Angular velocity limit
 
 # Type of control
@@ -20,9 +20,9 @@ control_type = "setpoint"                  # Options: "setpoint", "traj_tracking
 trajectory = "infinity"                    # Type of trajectory. Options: circular, infinity
 
 # For setpoint control:
-goal = [2, 1, np.pi/2]                     # Robot's goal for set point control
-Q_sp = np.diag([15, 15, 0.005])            # State cost matrix
-R_sp = np.array([2, 0.5])                  # Controls cost matrix
+goal = [3, 0, 0, 0]                     # Robot's goal for set point control
+Q_sp = np.diag([1, 1, .1, .1])#np.diag([15, 15, 15, 15])            # State cost matrix
+R_sp = np.array([.1, .1])#np.array([2, 2])                  # Controls cost matrix
 
 # For trajectory tracking control:
 Q_tr = np.diag([200, 200, 0.005])          # State cost matrix
@@ -31,7 +31,7 @@ R_tr = np.array([0.1, 0.001])              # Controls cost matrix
 # Obstacles
 static_obstacles_on = True                 # Whether to have obstacles or not
 moving_obstacles_on = False                # Whether to have moving obstacles or not
-r = 0.1                                    # Robot radius (for obstacle avoidance)
+r = 0.#0.1                                    # Robot radius (for obstacle avoidance)
 
 # Define moving obstacles as list of tuples (ax,bx,ay,by,radius)
 # where each obstacle follows a linear trajectory x=ax*t+bx, y=ay*t+by
@@ -52,7 +52,7 @@ scenario = 1                               # Options: 1-6 or None
 # ------------------------------------------------------------------------------
 if scenario == 1:
     control_type = "setpoint"
-    obs = [(1.0, 0.5, 0.1)]               # Define obstacles as list of tuples (x,y,radius)
+    obs = [(0.0, 0.0, 1.)]               # Define obstacles as list of tuples (x,y,radius)
 elif scenario == 2:
     control_type = "setpoint"
     obs = [(0.5, 0.3, 0.1),

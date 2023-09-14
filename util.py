@@ -4,13 +4,16 @@ import config
 from mpc_cbf import MPC
 from plotter import plot_path_comparisons, plot_cost_comparisons, plot_min_distance_comparison
 
+import numpy as np
+import os
 
+dir = os.getcwd() + "/results/"
 def save_mpc_results(controller):
     """Save results in pickle file."""
     if config.controller == "MPC-CBF":
-        filename = config.controller + '_' + config.control_type + '_gamma' + str(config.gamma)
+        filename = dir + config.controller + '_' + config.control_type + '_gamma' + str(config.gamma)
     else:
-        filename = config.controller + '_' + config.control_type
+        filename = dir + config.controller + '_' + config.control_type
 
     save_results([controller.mpc, controller.simulator], result_name=filename)
 
@@ -18,6 +21,14 @@ def save_mpc_results(controller):
 def load_mpc_results(filename):
     """Load results from pickle file."""
     return load_results('./results/' + filename + '.pkl')
+
+
+def save_mpc_trajectory_results(controller):
+    """Save x- and u- trajectories to files"""
+
+    x_traj, u_traj = controller.mpc.data['_x'], controller.mpc.data['_u']
+    np.save( dir + "/mpc-cbf-x", x_traj)
+    np.save(dir + "mpc-cbf-u", u_traj)
 
 
 def compare_controller_results(N, gamma):

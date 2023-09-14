@@ -9,7 +9,7 @@ class MPC:
 
     min Σ_{k=0}{N-1} 1/2*x'_k^T*Q*x'_k + 1/2*u_k^T*R*u_k   over u
     s.t.
-        x_{k+1} = x_k + B*u_k*T_s
+        x_{k+1} = x_k + (Ax_k + B*u_k)*T_s
         x_min <= x_k <= x_max
         u_min <= u_k <= u_max
         x_0 = x(0)
@@ -49,7 +49,7 @@ class MPC:
     def define_model(self):
         """Configures the dynamical model of the system (and part of the objective function).
 
-        x_{k+1} = x_k + B*u_k*T_s
+        x_{k+1} = x_k + (A*x_k + B*u_k)*T_s
         Returns:
           - model(do_mpc.model.Model): The system model
         """
@@ -58,7 +58,7 @@ class MPC:
         model = do_mpc.model.Model(model_type)
 
         # States
-        n_states = 3
+        n_states = 4
         _x = model.set_variable(var_type='_x', var_name='x', shape=(n_states, 1))
 
         # Inputs
@@ -66,10 +66,11 @@ class MPC:
         _u = model.set_variable(var_type='_u', var_name='u', shape=(n_controls, 1))
 
         # State Space matrices
+        A = self.get_sys_matrix_A(_x)
         B = self.get_sys_matrix_B(_x)
 
         # Set right-hand-side of ODE for all introduced states (_x).
-        x_next = _x + B@_u*self.Ts
+        x_next = _x + (A@_x + B@_u)*self.Ts
         model.set_rhs('x', x_next, process_noise=False)  # Set to True if adding noise
 
         # Optional: Define an expression, which represents the stage and terminal
@@ -90,21 +91,33 @@ class MPC:
         return model
 
     @staticmethod
+    def get_sys_matrix_A(x):
+        """Defines the system input matrix A.
+
+        Inputs:
+          - x(casadi.casadi.SX): The state vector [4x1]
+        Returns:
+          - A(casadi.casadi.SX): The system input matrix B [4x4]
+        """
+        a = 1e-9  # Small positive constant so system has relative degree 1
+        A = SX.zeros(4, 4)
+        A[0, 2] = 1.
+        A[1, 3] = 1.
+        return A
+
+    @staticmethod
     def get_sys_matrix_B(x):
         """Defines the system input matrix B.
 
         Inputs:
-          - x(casadi.casadi.SX): The state vector [3x1]
+          - x(casadi.casadi.SX): The state vector [4x1]
         Returns:
-          - B(casadi.casadi.SX): The system input matrix B [3x2]
+          - B(casadi.casadi.SX): The system input matrix B [4x2]
         """
         a = 1e-9  # Small positive constant so system has relative degree 1
-        B = SX.zeros(3, 2)
-        B[0, 0] = cos(x[2])
-        B[0, 1] = -a*sin(x[2])
-        B[1, 0] = sin(x[2])
-        B[1, 1] = a*cos(x[2])
-        B[2, 1] = 1
+        B = SX.zeros(4, 2)
+        B[2, 0] = 1.
+        B[3, 1] = 1.
         return B
 
     def get_cost_expression(self, model):
@@ -121,16 +134,17 @@ class MPC:
             # Define state error
             X = model.x['x'] - self.goal
         else:                                # Trajectory tracking
-            # Set time-varying parameters for the objective function
-            model.set_variable('_tvp', 'x_set_point')
-            model.set_variable('_tvp', 'y_set_point')
+            print("ERROR:INVALID COST TYPE")
+            # # Set time-varying parameters for the objective function
+            # model.set_variable('_tvp', 'x_set_point')
+            # model.set_variable('_tvp', 'y_set_point')
 
-            # Define state error
-            theta_des = np.arctan2(model.tvp['y_set_point'] - model.x['x', 1], model.tvp['x_set_point'] - model.x['x', 0])
-            X = SX.zeros(3, 1)
-            X[0] = model.x['x', 0] - model.tvp['x_set_point']
-            X[1] = model.x['x', 1] - model.tvp['y_set_point']
-            X[2] = np.arctan2(sin(theta_des - model.x['x', 2]), cos(theta_des - model.x['x', 2]))
+            # # Define state error
+            # theta_des = np.arctan2(model.tvp['y_set_point'] - model.x['x', 1], model.tvp['x_set_point'] - model.x['x', 0])
+            # X = SX.zeros(4, 1)
+            # X[0] = model.x['x', 0] - model.tvp['x_set_point']
+            # X[1] = model.x['x', 1] - model.tvp['y_set_point']
+            # X[2] = np.arctan2(sin(theta_des - model.x['x', 2]), cos(theta_des - model.x['x', 2]))
 
         cost_expression = transpose(X)@self.Q@X
         return model, cost_expression
@@ -161,7 +175,7 @@ class MPC:
         mpc.set_rterm(u=self.R)         # Input penalty (R diagonal matrix in objective fun)
 
         # State and input bounds
-        max_u = np.array([self.v_limit, self.omega_limit])
+        max_u = np.array([self.v_limit, self.v_limit])
         mpc.bounds['lower', '_u', 'u'] = -max_u
         mpc.bounds['upper', '_u', 'u'] = max_u
 

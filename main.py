@@ -23,13 +23,13 @@ def main():
     plotter.plot_results()
     plotter.plot_predictions()
     plotter.plot_path()
-    plotter.create_trajectories_animation()
-    plotter.create_path_animation()
+    # plotter.create_trajectories_animation()
+    # plotter.create_path_animation()
     plotter.plot_cbf()
 
-    # Store results
+    #Store results
     # util.save_mpc_results(controller)
-
+    util.save_mpc_trajectory_results(controller)
 
 if __name__ == '__main__':
     main()

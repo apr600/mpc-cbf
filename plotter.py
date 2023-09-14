@@ -21,9 +21,9 @@ class Plotter:
         graphics.plot_results()
         graphics.reset_axes()
         lines = graphics.result_lines['_x']
-        ax[0].legend(lines, ['x-position', 'y-position', 'theta'])
+        ax[0].legend(lines, ['x-position', 'y-position', 'xdot', 'ydot'])
         lines = graphics.result_lines['_u']
-        ax[1].legend(lines, ['v (linear velocity)', '$\omega$ (angular velocity)'], title='controls')
+        ax[1].legend(lines, ['$u_x$ (control on x-acc)', '$u_y$ (control on y-acc)'], title='controls')
         ax[2].set_xlabel('Time [s]')
         ax[0].set_ylabel('State')
         ax[1].set_ylabel('Input')
